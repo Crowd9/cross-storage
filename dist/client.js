@@ -25,7 +25,8 @@
    * @example
    * var storage = new CrossStorageClient('https://store.example.com/hub.html', {
    *   timeout: 5000,
-   *   frameId: 'storageFrame'
+   *   frameId: 'storageFrame',
+   *   scope: 'gleam-storage'
    * });
    *
    * @constructor
@@ -44,6 +45,7 @@
    * @property {int}      _count     Number of requests sent
    * @property {function} _listener  The listener added to the window
    * @property {Window}   _hub       The hub window
+   * @property {string}   _scope     Message scope
    */
   function CrossStorageClient(url, opts) {
     opts = opts || {};
@@ -58,6 +60,7 @@
     this._count     = 0;
     this._timeout   = opts.timeout || 5000;
     this._listener  = null;
+    this._scope     = opts.scope || 'cross-storage';
 
     this._installListener();
 
@@ -285,7 +288,7 @@
       if (origin !== client._origin) return;
 
       // LocalStorage isn't available in the hub
-      if (message.data === 'cross-storage:unavailable') {
+      if (message.data === (this._scope + ':unavailable')) {
         if (!client._closed) client.close();
         if (!client._requests.connect) return;
 
@@ -298,7 +301,7 @@
       }
 
       // Handle initial connection
-      if (message.data.indexOf('cross-storage:') !== -1 && !client._connected) {
+      if (message.data.indexOf(this._scope + ':') !== -1 && !client._connected) {
         client._connected = true;
         if (!client._requests.connect) return;
 
@@ -308,7 +311,7 @@
         delete client._requests.connect;
       }
 
-      if (message.data === 'cross-storage:ready') return;
+      if (message.data === (this._scope + ':ready')) return;
 
       // All other messages
       try {
@@ -349,7 +352,7 @@
       if (client._connected) return clearInterval(interval);
       if (!client._hub) return;
 
-      client._hub.postMessage('cross-storage:poll', targetOrigin);
+      client._hub.postMessage(this._scope + ':poll', targetOrigin);
     }, 1000);
   };
 
@@ -405,7 +408,7 @@
 
     req = {
       id:     this._id + ':' + client._count,
-      method: 'cross-storage:' + method,
+      method: this._scope + ':' + method,
       params: params
     };
 

@@ -24,12 +24,15 @@
    * CrossStorageHub.init([
    *   {origin: /\.example.com$/,        allow: ['get']},
    *   {origin: /:(www\.)?example.com$/, allow: ['get', 'set', 'del']}
-   * ]);
+   * ], {
+   *   scope: 'gleam-storage'
+   * });
    *
    * @param {array} permissions An array of objects with origin and allow
    */
-  CrossStorageHub.init = function(permissions) {
+  CrossStorageHub.init = function(permissions, opts) {
     var available = true;
+    CrossStorageHub._scope = opts.scope || "cross-storage"
 
     // Return if localStorage is unavailable, or third party
     // access is disabled
@@ -41,7 +44,7 @@
 
     if (!available) {
       try {
-        return window.parent.postMessage('cross-storage:unavailable', '*');
+        return window.parent.postMessage(CrossStorageHub._scope + ':unavailable', '*');
       } catch (e) {
         return;
       }
@@ -49,7 +52,7 @@
 
     CrossStorageHub._permissions = permissions || [];
     CrossStorageHub._installListener();
-    window.parent.postMessage('cross-storage:ready', '*');
+    window.parent.postMessage(CrossStorageHub._scope + ':ready', '*');
   };
 
   /**
@@ -82,12 +85,12 @@
     origin = (message.origin === 'null') ? 'file://' : message.origin;
 
     // Handle polling for a ready message
-    if (message.data === 'cross-storage:poll') {
-      return window.parent.postMessage('cross-storage:ready', message.origin);
+    if (message.data === (CrossStorageHub._scope + ':poll')) {
+      return window.parent.postMessage(CrossStorageHub._scope + ':ready', message.origin);
     }
 
     // Ignore the ready message when viewing the hub directly
-    if (message.data === 'cross-storage:ready') return;
+    if (message.data === (CrossStorageHub._scope + ':ready')) return;
 
     // Check whether message.data is a valid json
     try {
@@ -101,7 +104,7 @@
       return;
     }
 
-    method = request.method.split('cross-storage:')[1];
+    method = request.method.split(CrossStorageHub._scope + ':')[1];
 
     if (!method) {
       return;
