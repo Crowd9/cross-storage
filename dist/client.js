@@ -288,7 +288,7 @@
       if (origin !== client._origin) return;
 
       // LocalStorage isn't available in the hub
-      if (message.data === (this._scope + ':unavailable')) {
+      if (message.data === (client._scope + ':unavailable')) {
         if (!client._closed) client.close();
         if (!client._requests.connect) return;
 
@@ -301,7 +301,7 @@
       }
 
       // Handle initial connection
-      if (message.data.indexOf(this._scope + ':') !== -1 && !client._connected) {
+      if (message.data.indexOf(client._scope + ':') !== -1 && !client._connected) {
         client._connected = true;
         if (!client._requests.connect) return;
 
@@ -311,7 +311,7 @@
         delete client._requests.connect;
       }
 
-      if (message.data === (this._scope + ':ready')) return;
+      if (message.data === (client._scope + ':ready')) return;
 
       // All other messages
       try {
@@ -352,7 +352,7 @@
       if (client._connected) return clearInterval(interval);
       if (!client._hub) return;
 
-      client._hub.postMessage(this._scope + ':poll', targetOrigin);
+      client._hub.postMessage(client._scope + ':poll', targetOrigin);
     }, 1000);
   };
 
